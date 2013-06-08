@@ -9,15 +9,26 @@ http://www.geometrictools.com/License/Boost/LICENSE_1_0.txt
 
 */
 
+#include "Config.h"
+
 #include "cinder/app/AppNative.h"
-#include "cinder/gl/gl.h"
-#include "cinder/gl/Texture.h"
+#if defined( USE_DIRECTX )
+  #include "cinder/app/RendererDx.h"
+  #include "cinder/dx/dx.h"
+  #include "cinder/dx/DxTexture.h"
+#else
+  #include "cinder/gl/gl.h"
+  #include "cinder/gl/Texture.h"
+#endif
 #include "cinder/params/Params.h"
 #include "cinder/Rand.h"
 
 #include "cinderfx/Fluid2D.h"
-
 #include "ParticleSoup.h"
+
+#if defined( USE_DIRECTX )
+  #pragma comment( lib, "d3d11" )
+#endif
 
 class Fluid2DParticleSoupApp : public ci::app::AppNative {
 public:
@@ -38,8 +49,14 @@ private:
 	float					mRgbScale;
 	ci::Vec2f				mPrevPos;
 	cinderfx::Fluid2D		mFluid2D;
-	ci::gl::Texture			mTex;
+
+#if defined( USE_DIRECTX )
+	ci::dx::TextureRef		mTex;
+#else
+	ci::gl::TextureRef		mTex;
 	ci::params::InterfaceGl	mParams;
+#endif
+
 	ParticleSoup			mParticleSoup;
 	ci::Colorf				mColor;
 	
@@ -60,8 +77,6 @@ void Fluid2DParticleSoupApp::prepareSettings( Settings *settings )
 
 void Fluid2DParticleSoupApp::setup()
 {
-	glEnable( GL_TEXTURE_2D );
-
 	mDenScale = 50;
 	mRgbScale = 40;
 
@@ -69,7 +84,9 @@ void Fluid2DParticleSoupApp::setup()
    	mFluid2D.setDensityDissipation( 0.99f );
 	mFluid2D.setRgbDissipation( 0.99f ); 
 	mVelScale = 3.0f*std::max( mFluid2D.resX(), mFluid2D.resY() );
-	
+
+#if defined( USE_DIRECTX )
+#else
 	mParams = params::InterfaceGl( "Params", Vec2i( 300, 400 ) );
 	mParams.addParam( "Stam Step", mFluid2D.stamStepAddr() );
 	mParams.addSeparator();
@@ -94,7 +111,8 @@ void Fluid2DParticleSoupApp::setup()
 	mParams.addParam( "Enable Buoyancy", mFluid2D.enableBuoyancyAddr() );
 	mParams.addParam( "Buoyancy Scale", mFluid2D.buoyancyScaleAddr(), "min=0 max=100 step=0.001" );
 	mParams.addParam( "Vorticity Scale", mFluid2D.vorticityScaleAddr(), "min=0 max=1 step=0.001" );
-	
+#endif	
+
 	mFluid2D.setRgbDissipation( 0.9930f );
 	mFluid2D.enableDensity();
 	mFluid2D.enableRgb();
@@ -171,6 +189,26 @@ void Fluid2DParticleSoupApp::update()
 
 void Fluid2DParticleSoupApp::draw()
 {
+
+#if defined( USE_DIRECTX )
+	// clear out the window with black
+	dx::clear( Color( 0, 0, 0 ) );
+	dx::enableAdditiveBlending();
+
+	// Uncomment to see underlining density	- not quite working yet
+	/*
+	float* data = const_cast<float*>( (float*)mFluid2D.rgb().data() );
+	Surface32f surf( data, mFluid2D.resX(), mFluid2D.resY(), mFluid2D.resX()*sizeof(Colorf), SurfaceChannelOrder::RGB );
+	if ( ! mTex ) {
+		mTex = dx::Texture::create( surf );
+	} else {
+		mTex->update( surf );
+	}
+	dx::draw( mTex, getWindowBounds() );
+	*/
+	
+	mParticleSoup.draw();
+#else 
 	// clear out the window with black
 	gl::clear( Color( 0, 0, 0 ) );
 	gl::enableAdditiveBlending();
@@ -182,16 +220,21 @@ void Fluid2DParticleSoupApp::draw()
 	float* data = const_cast<float*>( (float*)mFluid2D.rgb().data() );
 	Surface32f surf( data, mFluid2D.resX(), mFluid2D.resY(), mFluid2D.resX()*sizeof(Colorf), SurfaceChannelOrder::RGB );
 	if ( ! mTex ) {
-		mTex = gl::Texture( surf );
+		mTex = gl::Texture::create( surf );
 	} else {
-		mTex.update( surf );
+		mTex->update( surf );
 	}
 	gl::draw( mTex, getWindowBounds() );
-	mTex.unbind();
+	mTex->unbind();
 	*/
 
 	mParticleSoup.draw();
 //	mParams.draw();	
+#endif
 }
 
-CINDER_APP_NATIVE( Fluid2DParticleSoupApp, RendererGl )
+#if defined( USE_DIRECTX )
+  CINDER_APP_NATIVE( Fluid2DParticleSoupApp, RendererDx )
+#else
+  CINDER_APP_NATIVE( Fluid2DParticleSoupApp, RendererGl )
+#endif

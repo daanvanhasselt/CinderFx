@@ -9,13 +9,28 @@ http://www.geometrictools.com/License/Boost/LICENSE_1_0.txt
 
 */
 
+#include "Config.h"
 #include "ParticleSoup.h"
-//
+
 #include "cinder/app/App.h"
-#include "cinder/gl/gl.h"
+#if defined( USE_DIRECTX )
+  #include "cinder/dx/dx.h"
+#else
+  #include "cinder/gl/gl.h"
+#endif
 #include "cinder/Rand.h"
 using namespace cinder;
 
+const float kBorder = 1.0f;
+#if defined( CINDER_COCOA_TOUCH )
+  const float kDampen    = 0.98f;
+  const int kMaxParticles = 15000;
+#else
+  const float kDampen = 0.94f;
+  const int kMaxParticles = 75000;
+#endif
+const float kPointSize = 2.25f;
+/*
 const float kBorder = 1.0f;
 #if defined( CINDER_COCOA_TOUCH )
 const float kDampen    = 0.98f;
@@ -25,6 +40,7 @@ const float kDampen = 0.94f;
 const int kMaxParticles = 75000;
 #endif
 const float kPointSize = 2.25f;
+*/
 
 void Particle::reset( const Vec2f& aPos, float aLife, const Colorf& aColor )
 {
@@ -98,6 +114,27 @@ void ParticleSoup::update()
 void ParticleSoup::draw()
 {
 
+#if defined( USE_DIRECTX )
+	dx::begin( GL_POINTS );
+	for( int i = 0; i < numParticles(); ++i ) {
+		const Particle& part = mParticles.at( i );
+		float alpha = std::min( part.age()/1.0f, 0.75f );
+		dx::color( ColorAf( 1.0f, 0.4f, 0.1f, alpha ) );
+		dx::vertex( part.pos() );
+	}
+	dx::end();
+#else
+	gl::begin( GL_POINTS );
+	for( int i = 0; i < numParticles(); ++i ) {
+		const Particle& part = mParticles.at( i );
+		float alpha = std::min( part.age()/1.0f, 0.75f );
+		gl::color( ColorAf( 1.0f, 0.4f, 0.1f, alpha ) );
+		gl::vertex( part.pos() );
+	}
+	gl::end();
+#endif
+
+/*
 	glPointSize( kPointSize );
 #if defined ( CINDER_COCOA_TOUCH )
 	
@@ -147,5 +184,5 @@ void ParticleSoup::draw()
 	glEnd();
 		
 #endif
-	
+*/	
 }

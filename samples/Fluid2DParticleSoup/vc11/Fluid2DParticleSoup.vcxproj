@@ -57,7 +57,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <ResourceCompile>
@@ -124,6 +124,7 @@
     <ClInclude Include="..\..\..\src\cinderfx\Fluid2D.h" />
     <ClInclude Include="..\..\..\src\cinderfx\Grid.h" />
     <ClInclude Include="..\include\Resources.h" />
+    <ClInclude Include="..\src\Config.h" />
     <ClInclude Include="..\src\ParticleSoup.h" />
   </ItemGroup>
   <ItemGroup>

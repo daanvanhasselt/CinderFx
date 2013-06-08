@@ -47,6 +47,9 @@
     <ClInclude Include="..\..\..\src\cinderfx\Fluid2D.h">
       <Filter>Header Files\cinderfx</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\Config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resources.rc">
