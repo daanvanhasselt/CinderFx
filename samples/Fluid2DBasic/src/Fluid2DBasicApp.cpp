@@ -9,10 +9,17 @@ http://www.geometrictools.com/License/Boost/LICENSE_1_0.txt
 
 */
 
+#define USE_DIRECTX
+
 #include "cinder/app/AppNative.h"
-#include "cinder/gl/gl.h"
-#include "cinder/gl/GlslProg.h"
-#include "cinder/gl/Texture.h"
+#if defined( USE_DIRECTX )
+  #include "cinder/app/RendererDx.h"
+  #include "cinder/dx/DxTexture.h"
+#else
+  #include "cinder/gl/gl.h"
+  #include "cinder/gl/GlslProg.h"
+  #include "cinder/gl/Texture.h"
+#endif
 #include "cinder/Utilities.h"
 #include "cinder/params/Params.h"
 using namespace ci;
@@ -21,6 +28,10 @@ using namespace std;
 
 #include "cinderfx/Fluid2D.h"
 using namespace cinderfx;
+
+#if defined( USE_DIRECTX )
+  #pragma comment( lib, "d3d11" )
+#endif
 
 class Fluid2DBasicApp : public ci::app::AppNative {
 public:
@@ -40,8 +51,13 @@ private:
 	float					mDenScale;
 	ci::Vec2f				mPrevPos;
 	cinderfx::Fluid2D		mFluid2D;
-	ci::gl::Texture			mTex;
+
+#if defined( USE_DIRECTX )
+	ci::dx::TextureRef		mTex;
+#else
+	ci::gl::TextureRef		mTex;
 	params::InterfaceGl		mParams;
+#endif
 };
 
 void Fluid2DBasicApp::prepareSettings( Settings *settings )
@@ -54,14 +70,15 @@ void Fluid2DBasicApp::prepareSettings( Settings *settings )
 
 void Fluid2DBasicApp::setup()
 {
-	glEnable( GL_TEXTURE_2D );
 	
 	mDenScale = 25;    
 	
 	mFluid2D.set( 192, 192 );
  	mFluid2D.setDensityDissipation( 0.99f );
 	mVelScale = 3.0f*std::max( mFluid2D.resX(), mFluid2D.resY() );
-   	
+
+#if defined( USE_DIRECTX )
+#else
 	mParams = params::InterfaceGl( "Params", Vec2i( 300, 400 ) );
 	mParams.addParam( "Stam Step", mFluid2D.stamStepAddr() );
 	mParams.addSeparator();
@@ -83,7 +100,8 @@ void Fluid2DBasicApp::setup()
 	mParams.addParam( "Enable Buoyancy", mFluid2D.enableBuoyancyAddr() );
 	mParams.addParam( "Buoyancy Scale", mFluid2D.buoyancyScaleAddr(), "min=0 max=100 step=0.001" );
 	mParams.addParam( "Vorticity Scale", mFluid2D.vorticityScaleAddr(), "min=0 max=1 step=0.001" );
-	
+#endif	
+
 	mFluid2D.enableDensity();
 	mFluid2D.enableVorticityConfinement();
 	mFluid2D.initSimData();
@@ -147,20 +165,40 @@ void Fluid2DBasicApp::update()
 
 void Fluid2DBasicApp::draw()
 {
+#if defined( USE_DIRECTX )
+	// clear out the window with black
+	dx::clear( Color( 0, 0, 0 ) ); 
+
+	Channel32f chan( mFluid2D.resX(), mFluid2D.resY(), mFluid2D.resX()*sizeof(float), 1, const_cast<float*>( mFluid2D.density().data() ) );
+
+	if( ! mTex ) {
+		mTex = dx::Texture::create( chan );
+	} else {
+		mTex->update( chan );
+	}
+	dx::color( Color( 1, 1, 1 ) );
+	dx::draw( mTex, getWindowBounds() );
+#else 
 	// clear out the window with black
 	gl::clear( Color( 0, 0, 0 ) ); 
 
 	Channel32f chan( mFluid2D.resX(), mFluid2D.resY(), mFluid2D.resX()*sizeof(float), 1, const_cast<float*>( mFluid2D.density().data() ) );
 
 	if( ! mTex ) {
-		mTex = gl::Texture( chan );
+		mTex = gl::Texture::create( chan );
 	} else {
-		mTex.update( chan );
+		mTex->update( chan );
 	}
 	gl::color( Color( 1, 1, 1 ) );
 	gl::draw( mTex, getWindowBounds() );
 
 	mParams.draw();
+#endif
 }
 
-CINDER_APP_NATIVE( Fluid2DBasicApp, RendererGl )
+#if defined( USE_DIRECTX )
+  CINDER_APP_NATIVE( Fluid2DBasicApp, RendererDx )
+#else
+  CINDER_APP_NATIVE( Fluid2DBasicApp, RendererGl )
+#endif
+
