@@ -9,7 +9,7 @@ http://www.geometrictools.com/License/Boost/LICENSE_1_0.txt
 
 */
 
-#define USE_DIRECTX
+//#define USE_DIRECTX
 
 #include "cinder/app/AppNative.h"
 #if defined( USE_DIRECTX )
@@ -47,35 +47,47 @@ public:
 	void draw();
 
 private:
-	float					mVelScale;
-	float					mDenScale;
-	ci::Vec2f				mPrevPos;
-	cinderfx::Fluid2D		mFluid2D;
+	float						mVelScale;
+	float						mDenScale;
+	ci::Vec2f					mPrevPos;
+	std::map<int, ci::Vec2f>	mPrevTouchPos;
+	cinderfx::Fluid2D			mFluid2D;
 
 #if defined( USE_DIRECTX )
-	ci::dx::TextureRef		mTex;
+	ci::dx::TextureRef			mTex;
 #else
-	ci::gl::TextureRef		mTex;
-	params::InterfaceGl		mParams;
+	ci::gl::TextureRef			mTex;
+	params::InterfaceGl			mParams;
 #endif
+
+	ci::Channel8u				mChan8u;
 };
 
 void Fluid2DBasicApp::prepareSettings( Settings *settings )
 {
 	settings->setWindowSize( 700, 700 );
     settings->setResizable( false ); 
+#if ! defined( CINDER_WINRT )
 	settings->setFrameRate( 1000 );
+#endif
 	settings->enableMultiTouch();
 }
 
 void Fluid2DBasicApp::setup()
 {
 	
-	mDenScale = 25;    
-	
+	 
+#if defined( CINDER_WINRT )
+	mFluid2D.set( 192, 108 );
+	mFluid2D.setDensityDissipation( 0.99f );
+	mDenScale = 25;  
+	mVelScale = 0.01f*std::max( mFluid2D.resX(), mFluid2D.resY() );
+#else
 	mFluid2D.set( 192, 192 );
  	mFluid2D.setDensityDissipation( 0.99f );
+	mDenScale = 25;  
 	mVelScale = 3.0f*std::max( mFluid2D.resX(), mFluid2D.resY() );
+#endif
 
 #if defined( USE_DIRECTX )
 #else
@@ -138,10 +150,26 @@ void Fluid2DBasicApp::mouseDrag( MouseEvent event )
 
 void Fluid2DBasicApp::touchesBegan( TouchEvent event )
 {
+	const auto& touches = event.getTouches();
+	for( const auto& touch : touches ) {
+		mPrevTouchPos[touch.getId()] = Vec2f( touch.getPos() );
+	}
 }
 
 void Fluid2DBasicApp::touchesMoved( TouchEvent event )
 {
+	const auto& touches = event.getTouches();
+	for( const auto& touch : touches ) {
+		Vec2f prevPos = mPrevTouchPos[touch.getId()];
+		Vec2f pos = touch.getPos();
+		float x = (pos.x/(float)getWindowWidth())*mFluid2D.resX();
+		float y = (pos.y/(float)getWindowHeight())*mFluid2D.resY();	
+		Vec2f dv = pos - prevPos;
+		mFluid2D.splatVelocity( x, y, mVelScale*dv );
+		mFluid2D.splatDensity( x, y, mDenScale );
+	}
+
+/*
 	const std::vector<TouchEvent::Touch>& touches = event.getTouches();
 	for( std::vector<TouchEvent::Touch>::const_iterator cit = touches.begin(); cit != touches.end(); ++cit ) {
 		Vec2f prevPos = cit->getPrevPos();
@@ -149,9 +177,11 @@ void Fluid2DBasicApp::touchesMoved( TouchEvent event )
 		float x = (pos.x/(float)getWindowWidth())*mFluid2D.resX();
 		float y = (pos.y/(float)getWindowHeight())*mFluid2D.resY();	
 		Vec2f dv = pos - prevPos;
+		console() << "vel=" << mVelScale*dv << std::endl;
 		mFluid2D.splatVelocity( x, y, mVelScale*dv );
 		mFluid2D.splatDensity( x, y, mDenScale );
 	}
+*/
 }
 
 void Fluid2DBasicApp::touchesEnded( TouchEvent event )
@@ -169,15 +199,32 @@ void Fluid2DBasicApp::draw()
 	// clear out the window with black
 	dx::clear( Color( 0, 0, 0 ) ); 
 
-	Channel32f chan( mFluid2D.resX(), mFluid2D.resY(), mFluid2D.resX()*sizeof(float), 1, const_cast<float*>( mFluid2D.density().data() ) );
+	if( ! mChan8u ) {
+		mChan8u = Channel8u( mFluid2D.resX(), mFluid2D.resY() ); 
+	}
+
+	const float* src = mFluid2D.density().data();
+	uint8_t* dst = mChan8u.getData();
+
+	for( int j = 0; j < mFluid2D.resY(); ++j ) {
+		for( int i = 0; i < mFluid2D.resX(); ++i ) {
+			float s = *src;
+			uint32_t v = 255*std::max( 0.0f, std::min( 1.0f, s ) );
+			*dst = (uint8_t)v;
+
+			++src;
+			++dst; 
+		}
+	}
 
 	if( ! mTex ) {
-		mTex = dx::Texture::create( chan );
+		mTex = dx::Texture::create( mChan8u );
 	} else {
-		mTex->update( chan );
+		mTex->update( mChan8u );
 	}
 	dx::color( Color( 1, 1, 1 ) );
 	dx::draw( mTex, getWindowBounds() );
+
 #else 
 	// clear out the window with black
 	gl::clear( Color( 0, 0, 0 ) ); 

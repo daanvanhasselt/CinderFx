@@ -17,8 +17,8 @@ http://www.geometrictools.com/License/Boost/LICENSE_1_0.txt
 #include "cinderfx/Clamp.h"
 
 #include "cinder/app/App.h"
-#include "cinder/gl/gl.h"
-#include "cinder/gl/Texture.h"
+//#include "cinder/gl/gl.h"
+//#include "cinder/gl/Texture.h"
 #include "cinder/Channel.h"
 #include "cinder/CinderMath.h"
 #include "cinder/Surface.h"
@@ -1195,6 +1195,13 @@ void Fluid2D::beginSimStepParams( bool& aFtzOff, bool& aDazOff )
 	aDazOff = ( _MM_DENORMALS_ZERO_OFF == _MM_GET_DENORMALS_ZERO_MODE() );
 	_MM_SET_FLUSH_ZERO_MODE( _MM_FLUSH_ZERO_ON );
 	_MM_SET_DENORMALS_ZERO_MODE( _MM_DENORMALS_ZERO_ON );
+#elif defined( CINDER_WINRT )
+  #if ! defined( _M_ARM )
+	aFtzOff = ( _MM_FLUSH_ZERO_OFF == _MM_GET_FLUSH_ZERO_MODE() );
+	aDazOff = ( _MM_DENORMALS_ZERO_OFF == _MM_GET_DENORMALS_ZERO_MODE() );
+	_MM_SET_FLUSH_ZERO_MODE( _MM_FLUSH_ZERO_ON );
+	_MM_SET_DENORMALS_ZERO_MODE( _MM_DENORMALS_ZERO_ON );
+  #endif
 #elif defined( CINDER_MAC )
 	aFtzOff = ( _MM_FLUSH_ZERO_OFF == _MM_GET_FLUSH_ZERO_MODE() );
 	_MM_SET_FLUSH_ZERO_MODE( _MM_FLUSH_ZERO_ON );
@@ -1206,6 +1213,11 @@ void Fluid2D::endSimStepParams( bool aFtzOff, bool aDazOff )
 #if defined( CINDER_MSW ) 
 	_MM_SET_FLUSH_ZERO_MODE( aFtzOff ? _MM_FLUSH_ZERO_OFF : _MM_FLUSH_ZERO_ON );
 	_MM_SET_DENORMALS_ZERO_MODE( aDazOff ? _MM_DENORMALS_ZERO_OFF : _MM_DENORMALS_ZERO_ON );
+#elif defined( CINDER_WINRT )
+  #if ! defined( _M_ARM )
+	_MM_SET_FLUSH_ZERO_MODE( aFtzOff ? _MM_FLUSH_ZERO_OFF : _MM_FLUSH_ZERO_ON );
+	_MM_SET_DENORMALS_ZERO_MODE( aDazOff ? _MM_DENORMALS_ZERO_OFF : _MM_DENORMALS_ZERO_ON );
+  #endif
 #elif defined( CINDER_MAC )
 	_MM_SET_FLUSH_ZERO_MODE( aFtzOff ? _MM_FLUSH_ZERO_OFF : _MM_FLUSH_ZERO_ON );
 #endif
