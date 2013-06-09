@@ -48,6 +48,7 @@ private:
 	float					mDenScale;
 	float					mRgbScale;
 	ci::Vec2f				mPrevPos;
+std::map<int, ci::Vec2f>	mPrevTouchPos;
 	cinderfx::Fluid2D		mFluid2D;
 
 #if defined( USE_DIRECTX )
@@ -71,19 +72,37 @@ void Fluid2DParticleSoupApp::prepareSettings( Settings *settings )
 {
 	settings->setWindowSize( 700, 700 );
    	settings->setResizable( false ); 
+#if ! defined( CINDER_WINRT )
 	settings->setFrameRate( 1000 );
+#endif
 	settings->enableMultiTouch();
 }
 
 void Fluid2DParticleSoupApp::setup()
 {
+	console() << "WindowSize: " << getWindowSize() << std::endl;
+
 	mDenScale = 50;
 	mRgbScale = 40;
 
+#if defined( CINDER_WINRT )
+	//mFluid2D.set( 192, 108 );
+	mFluid2D.set( 128, 72 );
+	mFluid2D.setDensityDissipation( 0.99f );
+	mDenScale = 25;  
+	mVelScale = 0.0042f*std::max( mFluid2D.resX(), mFluid2D.resY() );
+#else
 	mFluid2D.set( 192, 192 );
-   	mFluid2D.setDensityDissipation( 0.99f );
-	mFluid2D.setRgbDissipation( 0.99f ); 
+	mFluid2D.setDensityDissipation( 0.99f );
+	mDenScale = 25;  
 	mVelScale = 3.0f*std::max( mFluid2D.resX(), mFluid2D.resY() );
+#endif
+
+	//mFluid2D.set( 192, 192 );
+	//mFluid2D.setDensityDissipation( 0.99f );
+	//mFluid2D.setRgbDissipation( 0.99f ); 
+	//mVelScale = 3.0f*std::max( mFluid2D.resX(), mFluid2D.resY() );
+
 
 #if defined( USE_DIRECTX )
 #else
@@ -113,9 +132,9 @@ void Fluid2DParticleSoupApp::setup()
 	mParams.addParam( "Vorticity Scale", mFluid2D.vorticityScaleAddr(), "min=0 max=1 step=0.001" );
 #endif	
 
-	mFluid2D.setRgbDissipation( 0.9930f );
-	mFluid2D.enableDensity();
-	mFluid2D.enableRgb();
+	//mFluid2D.setRgbDissipation( 0.9930f );
+	//mFluid2D.enableDensity();
+	//mFluid2D.enableRgb();
 	mFluid2D.enableVorticityConfinement();
 	mFluid2D.setBoundaryType( Fluid2D::BOUNDARY_TYPE_WRAP );
 	mFluid2D.initSimData();
@@ -158,10 +177,26 @@ void Fluid2DParticleSoupApp::mouseDrag( MouseEvent event )
 
 void Fluid2DParticleSoupApp::touchesBegan( TouchEvent event )
 {
+	const auto& touches = event.getTouches();
+	for( const auto& touch : touches ) {
+		mPrevTouchPos[touch.getId()] = Vec2f( touch.getPos() );
+	}
 }
 
 void Fluid2DParticleSoupApp::touchesMoved( TouchEvent event )
 {
+	const auto& touches = event.getTouches();
+	for( const auto& touch : touches ) {
+		Vec2f prevPos = mPrevTouchPos[touch.getId()];
+		Vec2f pos = touch.getPos();
+		float x = (pos.x/(float)getWindowWidth())*mFluid2D.resX();
+		float y = (pos.y/(float)getWindowHeight())*mFluid2D.resY();	
+		Vec2f dv = pos - prevPos;
+		mFluid2D.splatVelocity( x, y, mVelScale*dv );
+		mFluid2D.splatDensity( x, y, mDenScale );
+	}
+
+/*
 	const std::vector<TouchEvent::Touch>& touches = event.getTouches();
 	for( std::vector<TouchEvent::Touch>::const_iterator cit = touches.begin(); cit != touches.end(); ++cit ) {
 		Vec2f prevPos = cit->getPrevPos();
@@ -175,6 +210,7 @@ void Fluid2DParticleSoupApp::touchesMoved( TouchEvent event )
 			mFluid2D.splatDensity( x, y, mDenScale );
 		}
 	}
+*/
 }
 
 void Fluid2DParticleSoupApp::touchesEnded( TouchEvent event )

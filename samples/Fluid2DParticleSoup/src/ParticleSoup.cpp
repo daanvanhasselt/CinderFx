@@ -22,9 +22,13 @@ http://www.geometrictools.com/License/Boost/LICENSE_1_0.txt
 using namespace cinder;
 
 const float kBorder = 1.0f;
-#if defined( CINDER_COCOA_TOUCH )
+#if defined( CINDER_WINRT )
   const float kDampen    = 0.98f;
+#if defined( _M_ARM )
   const int kMaxParticles = 15000;
+#else
+  const int kMaxParticles = 25000;
+#endif
 #else
   const float kDampen = 0.94f;
   const int kMaxParticles = 75000;
@@ -119,7 +123,8 @@ void ParticleSoup::draw()
 	for( int i = 0; i < numParticles(); ++i ) {
 		const Particle& part = mParticles.at( i );
 		float alpha = std::min( part.age()/1.0f, 0.75f );
-		dx::color( ColorAf( 1.0f, 0.4f, 0.1f, alpha ) );
+		//dx::color( ColorAf( 1.0f, 0.4f, 0.1f, alpha ) );
+		dx::color( ColorAf( 1.0f, 0.45f, 0.15f, alpha ) );
 		dx::vertex( part.pos() );
 	}
 	dx::end();

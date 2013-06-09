@@ -1,3 +1,3 @@
 #pragma once
 
-#define USE_DIRECTX
+//#define USE_DIRECTX
