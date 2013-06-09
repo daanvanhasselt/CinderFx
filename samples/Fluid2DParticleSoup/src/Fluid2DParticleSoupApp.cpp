@@ -117,6 +117,7 @@ void Fluid2DParticleSoupApp::setup()
 	mFluid2D.enableDensity();
 	mFluid2D.enableRgb();
 	mFluid2D.enableVorticityConfinement();
+	mFluid2D.setBoundaryType( Fluid2D::BOUNDARY_TYPE_WRAP );
 	mFluid2D.initSimData();
 
 	mParticleSoup.setup( &mFluid2D );
