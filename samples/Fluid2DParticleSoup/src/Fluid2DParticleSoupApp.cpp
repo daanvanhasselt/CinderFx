@@ -21,6 +21,7 @@ http://www.geometrictools.com/License/Boost/LICENSE_1_0.txt
   #include "cinder/gl/Texture.h"
 #endif
 #include "cinder/params/Params.h"
+#include "cinder/ImageIo.h"
 #include "cinder/Rand.h"
 
 #include "cinderfx/Fluid2D.h"
@@ -53,6 +54,7 @@ std::map<int, ci::Vec2f>	mPrevTouchPos;
 
 #if defined( USE_DIRECTX )
 	ci::dx::TextureRef		mTex;
+	ci::dx::TextureRef		mBanner;
 #else
 	ci::gl::TextureRef		mTex;
 	ci::params::InterfaceGl	mParams;
@@ -60,7 +62,6 @@ std::map<int, ci::Vec2f>	mPrevTouchPos;
 
 	ParticleSoup			mParticleSoup;
 	ci::Colorf				mColor;
-	
 };
 
 using namespace ci;
@@ -91,6 +92,8 @@ void Fluid2DParticleSoupApp::setup()
 	mFluid2D.setDensityDissipation( 0.99f );
 	mDenScale = 25;  
 	mVelScale = 0.0042f*std::max( mFluid2D.resX(), mFluid2D.resY() );
+
+	mBanner = dx::Texture::create( loadImage( loadAsset( "WinRT+Cinder.png" ) ) );
 #else
 	mFluid2D.set( 192, 192 );
 	mFluid2D.setDensityDissipation( 0.99f );
@@ -245,6 +248,23 @@ void Fluid2DParticleSoupApp::draw()
 	*/
 	
 	mParticleSoup.draw();
+
+	if( mBanner ) {
+		dx::disableAlphaBlending();
+		Rectf bannerRect = mBanner->getBounds();
+		bannerRect.scale( 0.7f );
+		bannerRect = bannerRect.getCenteredFit( getWindowBounds(), false );
+
+		dx::color( Color( 1, 1, 1 ) );
+		dx::drawSolidRect( bannerRect );
+
+		dx::color( Color( 0.7f, 0.7f, 0.7f ) );
+		dx::drawStrokedRect( bannerRect );
+
+		dx::color( Color( 1, 1, 1 ) );
+		dx::draw( mBanner, bannerRect.scaledCentered( 0.96f ) );
+	}
+
 #else 
 	// clear out the window with black
 	gl::clear( Color( 0, 0, 0 ) );

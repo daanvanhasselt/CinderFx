@@ -58,6 +58,9 @@
     <Image Include="Assets\SplashScreen.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="Assets\WinRT+Cinder.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
