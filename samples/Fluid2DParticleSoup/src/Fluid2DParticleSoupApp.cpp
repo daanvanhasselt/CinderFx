@@ -93,7 +93,7 @@ void Fluid2DParticleSoupApp::setup()
 	mDenScale = 25;  
 	mVelScale = 0.0042f*std::max( mFluid2D.resX(), mFluid2D.resY() );
 
-	mBanner = dx::Texture::create( loadImage( loadAsset( "WinRT+Cinder.png" ) ) );
+	mBanner = dx::Texture::create( loadImage( loadAsset( "WinRT+Cinder2.png" ) ) );
 #else
 	mFluid2D.set( 192, 192 );
 	mFluid2D.setDensityDissipation( 0.99f );
@@ -252,17 +252,18 @@ void Fluid2DParticleSoupApp::draw()
 	if( mBanner ) {
 		dx::disableAlphaBlending();
 		Rectf bannerRect = mBanner->getBounds();
-		bannerRect.scale( 0.7f );
+		bannerRect.scale( 0.8f );
 		bannerRect = bannerRect.getCenteredFit( getWindowBounds(), false );
 
-		dx::color( Color( 1, 1, 1 ) );
-		dx::drawSolidRect( bannerRect );
+		//dx::color( Color( 1, 1, 1 ) );
+		//dx::drawSolidRect( bannerRect );
 
-		dx::color( Color( 0.7f, 0.7f, 0.7f ) );
-		dx::drawStrokedRect( bannerRect );
+		//dx::color( Color( 0.7f, 0.7f, 0.7f ) );
+		//dx::drawStrokedRect( bannerRect );
 
+		dx::enableAlphaBlending();
 		dx::color( Color( 1, 1, 1 ) );
-		dx::draw( mBanner, bannerRect.scaledCentered( 0.96f ) );
+		dx::draw( mBanner, bannerRect.scaledCentered( 1.0f ) );
 	}
 
 #else 

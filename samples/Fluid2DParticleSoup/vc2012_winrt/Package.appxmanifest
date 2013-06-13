@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest">
-  <Identity Name="d6e41012-0921-4d96-8d61-131a49e9b982" Publisher="CN=cinderuser" Version="1.0.0.0" />
+  <Identity Name="9e440383-f0c8-49a7-9cbf-9fbb55782ddf" Publisher="CN=cinderuser" Version="1.0.0.0" />
   <Properties>
     <DisplayName>Fluid2DParticleSoup</DisplayName>
     <PublisherDisplayName>cinderuser</PublisherDisplayName>
